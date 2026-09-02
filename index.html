@@ -106,12 +106,25 @@ async function sha256(s) {
 // sha256('haiyouli:haiyouli') = 7a54767ee2ac8f5b7c07213bf5aebe0538ccc02be97ec02b8dc95dad706b74ab
 const CRED_HASH = '8438ef72c4e1441fa73dbc558fe4f035b51e7f6959feab060ba8a7c276a6ff44';
 
+function goNext() {
+    // 登录成功后，如果之前想访问的是某个子报告，就跳回去
+    try {
+        var next = sessionStorage.getItem('next');
+        if (next && /^[\w\u4e00-\u9fa5\-_.]+\.html$/.test(next) && next !== 'index.html') {
+            sessionStorage.removeItem('next');
+            location.replace(next);
+            return true;
+        }
+    } catch(e) {}
+    return false;
+}
 async function verify() {
     const a = document.getElementById('acct').value.trim();
     const p = document.getElementById('pwd').value;
     const hash = await sha256(a + ':' + p);
     if (hash === CRED_HASH) {
         sessionStorage.setItem('auth', hash);
+        if (goNext()) return;
         document.getElementById('gate').style.display = 'none';
         document.getElementById('main').style.display = '';
     } else {
@@ -121,6 +134,7 @@ async function verify() {
 // 自动校验（session 内不再输）
 (async () => {
     if (sessionStorage.getItem('auth') === CRED_HASH) {
+        if (goNext()) return;
         document.getElementById('gate').style.display = 'none';
         document.getElementById('main').style.display = '';
     }
